@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea'
 import api from '@/lib/api'
 
 interface Client {
-    id: number
+    id: string
     first_name: string
     last_name: string
 }
@@ -21,7 +21,7 @@ const router = useRouter()
 const clients = ref<Client[]>([])
 
 const form = ref({
-    client_id: null as number | null,
+    client_id: null as string | null,
     name: '',
     description: '',
     status: 'Planning',

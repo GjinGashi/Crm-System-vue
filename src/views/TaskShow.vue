@@ -1,4 +1,3 @@
-```vue
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -18,18 +17,18 @@ import {
 import api from '@/lib/api'
 
 interface Project {
-    id: number
+    id: string
     name: string
 }
 
 interface User {
-    id: number
+    id: string
     first_name: string
     last_name: string
 }
 
 interface Task {
-    id: number
+    id: string
     title: string
     description: string | null
     status: string
@@ -54,6 +53,7 @@ const errors = ref<Record<string, string[]>>({})
 const isLoading = ref(true)
 const isEditing = ref(false)
 const isSaving = ref(false)
+const isArchiving = ref(false)
 const isLoadingOptions = ref(false)
 
 const form = ref({
@@ -208,20 +208,15 @@ async function saveTask() {
         const response = await api.patch(
             `/tasks/${task.value.id}`,
             {
-                project_id:
-                    Number(form.value.project_id),
-                user_id:
-                    Number(form.value.user_id),
+                project_id: form.value.project_id,
+                user_id: form.value.user_id,
                 title: form.value.title,
                 description: form.value.description,
                 status: form.value.status,
                 priority: form.value.priority,
-                start_time:
-                    form.value.start_time || null,
-                end_time:
-                    form.value.end_time || null,
-                due_date:
-                    form.value.due_date || null,
+                start_time: form.value.start_time || null,
+                end_time: form.value.end_time || null,
+                due_date: form.value.due_date || null,
             },
         )
 
@@ -260,6 +255,32 @@ async function saveTask() {
         }
     } finally {
         isSaving.value = false
+    }
+}
+
+async function archiveTask() {
+    if (!task.value) {
+        return
+    }
+
+    isArchiving.value = true
+    error.value = ''
+
+    try {
+        await api.patch(`/tasks/${task.value.id}/archive`)
+
+        await router.push('/tasks')
+    } catch (err: unknown) {
+        if (axios.isAxiosError(err)) {
+            error.value =
+                err.response?.data?.message ??
+                'Unable to archive task. Please try again.'
+        } else {
+            error.value =
+                'Unable to archive task. Please try again.'
+        }
+    } finally {
+        isArchiving.value = false
     }
 }
 
@@ -309,6 +330,7 @@ onMounted(fetchTask)
                                 type="button"
                                 :disabled="
                                     isSaving ||
+                                    isArchiving ||
                                     isLoadingOptions
                                 "
                                 @click="saveTask"
@@ -323,10 +345,29 @@ onMounted(fetchTask)
                             <Button
                                 variant="outline"
                                 type="button"
-                                :disabled="isSaving"
+                                :disabled="
+                                    isSaving ||
+                                    isArchiving
+                                "
                                 @click="cancelEditing"
                             >
                                 Cancel
+                            </Button>
+
+                            <Button
+                                variant="destructive"
+                                type="button"
+                                :disabled="
+                                    isSaving ||
+                                    isArchiving
+                                "
+                                @click="archiveTask"
+                            >
+                                {{
+                                    isArchiving
+                                        ? 'Archiving...'
+                                        : 'Archive'
+                                }}
                             </Button>
                         </template>
                     </template>
@@ -369,7 +410,7 @@ onMounted(fetchTask)
                     </p>
 
                     <h2
-                        v-else
+                        v-if="!isEditing"
                         class="text-xl font-semibold"
                     >
                         {{ task.title }}
@@ -397,9 +438,7 @@ onMounted(fetchTask)
                                 <SelectItem
                                     v-for="project in projects"
                                     :key="project.id"
-                                    :value="
-                                        project.id.toString()
-                                    "
+                                    :value="project.id.toString()"
                                 >
                                     {{ project.name }}
                                 </SelectItem>
@@ -417,7 +456,7 @@ onMounted(fetchTask)
                         </p>
 
                         <button
-                            v-else-if="task.project"
+                            v-if="!isEditing && task.project"
                             type="button"
                             class="font-medium hover:underline"
                             @click="openProject"
@@ -425,7 +464,10 @@ onMounted(fetchTask)
                             {{ task.project.name }}
                         </button>
 
-                        <p v-else>
+                        <p
+                            v-if="!isEditing && !task.project"
+                            class="font-medium"
+                        >
                             -
                         </p>
                     </div>
@@ -450,9 +492,7 @@ onMounted(fetchTask)
                                 <SelectItem
                                     v-for="user in users"
                                     :key="user.id"
-                                    :value="
-                                        user.id.toString()
-                                    "
+                                    :value="user.id.toString()"
                                 >
                                     {{ user.first_name }}
                                     {{ user.last_name }}
@@ -471,7 +511,7 @@ onMounted(fetchTask)
                         </p>
 
                         <p
-                            v-else
+                            v-if="!isEditing"
                             class="font-medium"
                         >
                             {{
@@ -496,11 +536,11 @@ onMounted(fetchTask)
                                 Todo
                             </option>
 
-                            <option value="in progress">
+                            <option value="In Progress">
                                 In Progress
                             </option>
 
-                            <option value="completed">
+                            <option value="Completed">
                                 Completed
                             </option>
 
@@ -520,7 +560,7 @@ onMounted(fetchTask)
                         </p>
 
                         <p
-                            v-else
+                            v-if="!isEditing"
                             class="font-medium"
                         >
                             {{ task.status }}
@@ -565,7 +605,7 @@ onMounted(fetchTask)
                         </p>
 
                         <p
-                            v-else
+                            v-if="!isEditing"
                             class="font-medium"
                         >
                             {{ task.priority }}
@@ -594,7 +634,7 @@ onMounted(fetchTask)
                         </p>
 
                         <p
-                            v-else
+                            v-if="!isEditing"
                             class="font-medium"
                         >
                             {{ task.start_time || '-' }}
@@ -623,7 +663,7 @@ onMounted(fetchTask)
                         </p>
 
                         <p
-                            v-else
+                            v-if="!isEditing"
                             class="font-medium"
                         >
                             {{ task.end_time || '-' }}
@@ -652,7 +692,7 @@ onMounted(fetchTask)
                         </p>
 
                         <p
-                            v-else
+                            v-if="!isEditing"
                             class="font-medium"
                         >
                             {{ task.due_date || '-' }}
@@ -660,7 +700,9 @@ onMounted(fetchTask)
                     </div>
 
                     <div class="md:col-span-2">
-                        <p class="text-muted-foreground mb-2 text-sm">
+                        <p
+                            class="text-muted-foreground mb-2 text-sm"
+                        >
                             Description
                         </p>
 
@@ -681,7 +723,7 @@ onMounted(fetchTask)
                         </p>
 
                         <p
-                            v-else
+                            v-if="!isEditing"
                             class="font-medium"
                         >
                             {{ task.description || '-' }}
@@ -699,4 +741,3 @@ onMounted(fetchTask)
         </div>
     </main>
 </template>
-

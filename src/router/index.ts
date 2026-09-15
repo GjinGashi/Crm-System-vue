@@ -9,7 +9,6 @@ import Profile from '@/views/Profile.vue'
 import Projects from '@/views/Projects.vue'
 import ProjectCreate from '@/views/ProjectCreate.vue'
 import ProjectShow from '@/views/ProjectShow.vue'
-import ProjectEdit from '@/views/ProjectEdit.vue'
 import Tasks from '@/views/Tasks.vue'
 import TaskShow from '@/views/TaskShow.vue'
 import CreateTask from '@/views/Tasks/CreateTask.vue'
@@ -67,11 +66,6 @@ const router = createRouter({
             path: '/projects/:id',
             name: 'projects.show',
             component: ProjectShow,
-        },
-        {
-            path: '/projects/:id/edit',
-            name: 'projects.edit',
-            component: ProjectEdit,
         },
         {
             path: '/tasks',

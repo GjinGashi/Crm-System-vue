@@ -1,4 +1,3 @@
-```vue
 <script setup lang="ts">
 import axios from 'axios'
 import { onMounted, ref } from 'vue'
@@ -11,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import api from '@/lib/api'
 
 interface Project {
-    id: number
+    id: string
     name: string
     description: string | null
     status: string
@@ -19,7 +18,7 @@ interface Project {
 }
 
 interface Client {
-    id: number
+    id: string
     first_name: string
     last_name: string
     email: string
@@ -44,6 +43,7 @@ const errors = ref<Record<string, string[]>>({})
 const isLoading = ref(true)
 const isEditing = ref(false)
 const isSaving = ref(false)
+const isArchiving = ref(false)
 
 const form = ref({
     first_name: '',
@@ -199,7 +199,33 @@ async function saveClient() {
     }
 }
 
-function openProject(id: number) {
+async function archiveClient() {
+    if (!client.value) {
+        return
+    }
+
+    isArchiving.value = true
+    error.value = ''
+
+    try {
+        await api.patch(`/clients/${client.value.id}/archive`)
+
+        await router.push('/clients')
+    } catch (err: unknown) {
+        if (axios.isAxiosError(err)) {
+            error.value =
+                err.response?.data?.message ??
+                'Unable to archive client. Please try again.'
+        } else {
+            error.value =
+                'Unable to archive client. Please try again.'
+        }
+    } finally {
+        isArchiving.value = false
+    }
+}
+
+function openProject(id: string) {
     router.push(`/projects/${id}`)
 }
 
@@ -221,7 +247,10 @@ onMounted(fetchClient)
                 </div>
 
                 <div class="flex gap-2">
-                    <Button variant="outline" @click="goBack">
+                    <Button
+                        variant="outline"
+                        @click="goBack"
+                    >
                         Back to Clients
                     </Button>
 
@@ -235,7 +264,7 @@ onMounted(fetchClient)
 
                         <template v-else>
                             <Button
-                                :disabled="isSaving"
+                                :disabled="isSaving || isArchiving"
                                 @click="saveClient"
                             >
                                 {{ isSaving ? 'Saving...' : 'Save' }}
@@ -243,10 +272,22 @@ onMounted(fetchClient)
 
                             <Button
                                 variant="outline"
-                                :disabled="isSaving"
+                                :disabled="isSaving || isArchiving"
                                 @click="cancelEditing"
                             >
                                 Cancel
+                            </Button>
+
+                            <Button
+                                variant="destructive"
+                                :disabled="isSaving || isArchiving"
+                                @click="archiveClient"
+                            >
+                                {{
+                                    isArchiving
+                                        ? 'Archiving...'
+                                        : 'Archive'
+                                }}
                             </Button>
                         </template>
                     </template>
@@ -273,7 +314,10 @@ onMounted(fetchClient)
             >
                 <div class="space-y-4 rounded-lg border p-6">
                     <div class="flex items-center gap-3">
-                        <h2 class="text-xl font-semibold">
+                        <h2
+                            v-if="!isEditing"
+                            class="text-xl font-semibold"
+                        >
                             {{ client.first_name }}
                             {{ client.last_name }}
                         </h2>
@@ -314,7 +358,7 @@ onMounted(fetchClient)
                             </p>
 
                             <p
-                                v-else
+                                v-if="!isEditing"
                                 class="font-medium"
                             >
                                 {{ client.first_name }}
@@ -339,7 +383,7 @@ onMounted(fetchClient)
                             </p>
 
                             <p
-                                v-else
+                                v-if="!isEditing"
                                 class="font-medium"
                             >
                                 {{ client.last_name }}
@@ -365,7 +409,7 @@ onMounted(fetchClient)
                             </p>
 
                             <p
-                                v-else
+                                v-if="!isEditing"
                                 class="font-medium"
                             >
                                 {{ client.email }}
@@ -390,7 +434,7 @@ onMounted(fetchClient)
                             </p>
 
                             <p
-                                v-else
+                                v-if="!isEditing"
                                 class="font-medium"
                             >
                                 {{ client.phone || '-' }}
@@ -415,7 +459,7 @@ onMounted(fetchClient)
                             </p>
 
                             <p
-                                v-else
+                                v-if="!isEditing"
                                 class="font-medium"
                             >
                                 {{ client.company || '-' }}
@@ -440,7 +484,7 @@ onMounted(fetchClient)
                             </p>
 
                             <p
-                                v-else
+                                v-if="!isEditing"
                                 class="font-medium"
                             >
                                 {{ client.address || '-' }}
@@ -465,7 +509,7 @@ onMounted(fetchClient)
                             </p>
 
                             <p
-                                v-else
+                                v-if="!isEditing"
                                 class="font-medium"
                             >
                                 {{ client.city || '-' }}
@@ -490,7 +534,7 @@ onMounted(fetchClient)
                             </p>
 
                             <p
-                                v-else
+                                v-if="!isEditing"
                                 class="font-medium"
                             >
                                 {{ client.country || '-' }}
@@ -532,7 +576,7 @@ onMounted(fetchClient)
                             </p>
 
                             <p
-                                v-else
+                                v-if="!isEditing"
                                 class="font-medium"
                             >
                                 {{ client.status }}
@@ -560,7 +604,7 @@ onMounted(fetchClient)
                             </p>
 
                             <p
-                                v-else
+                                v-if="!isEditing"
                                 class="font-medium"
                             >
                                 {{ client.notes || '-' }}
@@ -575,7 +619,10 @@ onMounted(fetchClient)
                     </h2>
 
                     <div
-                        v-if="!client.projects || client.projects.length === 0"
+                        v-if="
+                            !client.projects ||
+                            client.projects.length === 0
+                        "
                     >
                         <p class="text-muted-foreground">
                             No projects associated with this client yet.
@@ -649,5 +696,3 @@ onMounted(fetchClient)
         </div>
     </main>
 </template>
-
-

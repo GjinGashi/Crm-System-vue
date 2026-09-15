@@ -1,4 +1,4 @@
-```vue
+
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -13,7 +13,7 @@ import {
 import api from '@/lib/api'
 
 interface User {
-    id: number
+    id: string
     first_name: string
     last_name: string
     email: string
@@ -22,12 +22,12 @@ interface User {
 
 interface SearchResults {
     clients: {
-        id: number
+        id: string
         first_name: string
         last_name: string
     }[]
-    projects: { id: number; name: string }[]
-    tasks: { id: number; title: string }[]
+    projects: { id: string; name: string }[]
+    tasks: { id: string; title: string }[]
 }
 
 const router = useRouter()

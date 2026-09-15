@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea'
 import api from '@/lib/api'
 
 interface Client {
-    id: number
+     id: string
     first_name: string
     last_name: string
     email: string

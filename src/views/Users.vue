@@ -1,7 +1,7 @@
-```vue
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import axios from 'axios'
+import { toast } from 'vue-sonner'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -32,11 +32,21 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 
 import api from '@/lib/api'
 
 interface User {
-    id: number
+    id: string
     first_name: string
     last_name: string
     email: string
@@ -53,17 +63,23 @@ const role = ref('user')
 
 const createErrors = ref<Record<string, string[]>>({})
 const editErrors = ref<Record<string, string[]>>({})
+
 const generalError = ref('')
+
 const isLoading = ref(true)
 const isCreating = ref(false)
 
-const editingUserId = ref<number | null>(null)
+const editingUserId = ref<string | null>(null)
+
 const editFirstName = ref('')
 const editLastName = ref('')
 const editEmail = ref('')
 const editRole = ref('')
 
-const actionLoading = ref<number | null>(null)
+const actionLoading = ref<string | null>(null)
+
+const deleteDialogOpen = ref(false)
+const userToDelete = ref<User | null>(null)
 
 async function fetchUsers() {
     isLoading.value = true
@@ -110,6 +126,8 @@ async function createUser() {
         email.value = ''
         password.value = ''
         role.value = 'user'
+
+        toast.success('User created successfully.')
     } catch (err: unknown) {
         if (axios.isAxiosError(err)) {
             if (err.response?.status === 422) {
@@ -171,6 +189,8 @@ async function saveEdit() {
         }
 
         cancelEditing()
+
+        toast.success('User updated successfully.')
     } catch (err: unknown) {
         if (axios.isAxiosError(err)) {
             if (err.response?.status === 422) {
@@ -190,7 +210,8 @@ async function saveEdit() {
 }
 
 async function changeRole(user: User, event: Event) {
-    const newRole = (event.target as HTMLSelectElement).value
+    const newRole =
+        (event.target as HTMLSelectElement).value
 
     actionLoading.value = user.id
     generalError.value = ''
@@ -213,13 +234,16 @@ async function changeRole(user: User, event: Event) {
         if (index !== -1) {
             users.value[index] = updatedUser
         }
+
+        toast.success('User role updated successfully.')
     } catch (err: unknown) {
         if (axios.isAxiosError(err)) {
             generalError.value =
                 err.response?.data?.message ??
                 'Unable to change user role.'
         } else {
-            generalError.value = 'Unable to change user role.'
+            generalError.value =
+                'Unable to change user role.'
         }
 
         await fetchUsers()
@@ -228,7 +252,18 @@ async function changeRole(user: User, event: Event) {
     }
 }
 
-async function deleteUser(id: number) {
+function openDeleteDialog(user: User) {
+    userToDelete.value = user
+    deleteDialogOpen.value = true
+}
+
+async function deleteUser() {
+    if (!userToDelete.value) {
+        return
+    }
+
+    const id = userToDelete.value.id
+
     actionLoading.value = id
     generalError.value = ''
 
@@ -238,13 +273,19 @@ async function deleteUser(id: number) {
         users.value = users.value.filter(
             (user) => user.id !== id,
         )
+
+        toast.success('User deleted successfully.')
+
+        deleteDialogOpen.value = false
+        userToDelete.value = null
     } catch (err: unknown) {
         if (axios.isAxiosError(err)) {
             generalError.value =
                 err.response?.data?.message ??
                 'Unable to delete user.'
         } else {
-            generalError.value = 'Unable to delete user.'
+            generalError.value =
+                'Unable to delete user.'
         }
     } finally {
         actionLoading.value = null
@@ -253,10 +294,12 @@ async function deleteUser(id: number) {
 
 function cancelEditing() {
     editingUserId.value = null
+
     editFirstName.value = ''
     editLastName.value = ''
     editEmail.value = ''
     editRole.value = ''
+
     editErrors.value = {}
 }
 
@@ -265,58 +308,145 @@ onMounted(fetchUsers)
 
 <template>
     <main class="min-h-screen bg-background p-6">
-        <div class="space-y-6">
-            <h1 class="text-3xl font-bold">
-                Users
-            </h1>
+        <div class="mx-auto max-w-7xl space-y-6">
 
-            <p v-if="generalError" class="rounded-md bg-red-50 p-3 text-sm text-red-700">
+            <!-- Page header -->
+            <div>
+                <h1 class="text-3xl font-bold tracking-tight">
+                    Users
+                </h1>
+
+                <p class="text-muted-foreground mt-1">
+                    Manage system users and their roles.
+                </p>
+            </div>
+
+            <!-- General error -->
+            <div
+                v-if="generalError"
+                class="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
+            >
                 {{ generalError }}
-            </p>
+            </div>
 
-            <Card class="mb-6">
+            <!-- Create user -->
+            <Card>
                 <CardHeader>
                     <CardTitle>Create User</CardTitle>
                 </CardHeader>
 
                 <CardContent>
-                    <form novalidate class="space-y-4" @submit.prevent="createUser">
+                    <form
+                        novalidate
+                        class="grid gap-4 md:grid-cols-2"
+                        @submit.prevent="createUser"
+                    >
+                        <!-- First name -->
                         <div>
-                            <Input v-model="firstName" type="text" placeholder="First Name" />
+                            <label
+                                class="mb-1 block text-sm font-medium"
+                            >
+                                First Name
+                                <span class="text-destructive">*</span>
+                            </label>
 
-                            <p v-if="createErrors.first_name" class="text-destructive mt-1 text-sm">
+                            <Input
+                                v-model="firstName"
+                                type="text"
+                                placeholder="First Name"
+                            />
+
+                            <p
+                                v-if="createErrors.first_name"
+                                class="text-destructive mt-1 text-sm"
+                            >
                                 {{ createErrors.first_name[0] }}
                             </p>
                         </div>
 
+                        <!-- Last name -->
                         <div>
-                            <Input v-model="lastName" type="text" placeholder="Last Name" />
+                            <label
+                                class="mb-1 block text-sm font-medium"
+                            >
+                                Last Name
+                                <span class="text-destructive">*</span>
+                            </label>
 
-                            <p v-if="createErrors.last_name" class="text-destructive mt-1 text-sm">
+                            <Input
+                                v-model="lastName"
+                                type="text"
+                                placeholder="Last Name"
+                            />
+
+                            <p
+                                v-if="createErrors.last_name"
+                                class="text-destructive mt-1 text-sm"
+                            >
                                 {{ createErrors.last_name[0] }}
                             </p>
                         </div>
 
+                        <!-- Email -->
                         <div>
-                            <Input v-model="email" type="email" placeholder="Email" />
+                            <label
+                                class="mb-1 block text-sm font-medium"
+                            >
+                                Email
+                                <span class="text-destructive">*</span>
+                            </label>
 
-                            <p v-if="createErrors.email" class="text-destructive mt-1 text-sm">
+                            <Input
+                                v-model="email"
+                                type="email"
+                                placeholder="Email"
+                            />
+
+                            <p
+                                v-if="createErrors.email"
+                                class="text-destructive mt-1 text-sm"
+                            >
                                 {{ createErrors.email[0] }}
                             </p>
                         </div>
 
+                        <!-- Password -->
                         <div>
-                            <Input v-model="password" type="password" placeholder="Password" />
+                            <label
+                                class="mb-1 block text-sm font-medium"
+                            >
+                                Password
+                                <span class="text-destructive">*</span>
+                            </label>
 
-                            <p v-if="createErrors.password" class="text-destructive mt-1 text-sm">
+                            <Input
+                                v-model="password"
+                                type="password"
+                                placeholder="Password"
+                            />
+
+                            <p
+                                v-if="createErrors.password"
+                                class="text-destructive mt-1 text-sm"
+                            >
                                 {{ createErrors.password[0] }}
                             </p>
                         </div>
 
+                        <!-- Role -->
                         <div>
+                            <label
+                                class="mb-1 block text-sm font-medium"
+                            >
+                                Role
+                                <span class="text-destructive">*</span>
+                            </label>
+
                             <Select v-model="role">
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Select Role" />
+                                    <SelectValue
+                                        placeholder="Select Role"
+                                    />
                                 </SelectTrigger>
 
                                 <SelectContent>
@@ -330,176 +460,402 @@ onMounted(fetchUsers)
                                 </SelectContent>
                             </Select>
 
-                            <p v-if="createErrors.role" class="text-destructive mt-1 text-sm">
+                            <p
+                                v-if="createErrors.role"
+                                class="text-destructive mt-1 text-sm"
+                            >
                                 {{ createErrors.role[0] }}
                             </p>
                         </div>
 
-                        <Button type="submit" :disabled="isCreating">
-                            {{
-                                isCreating
-                                    ? 'Creating...'
-                                    : 'Create User'
-                            }}
-                        </Button>
+                        <!-- Create button -->
+                        <div class="flex items-end">
+                            <Button
+                                type="submit"
+                                :disabled="isCreating"
+                            >
+                                {{
+                                    isCreating
+                                        ? 'Creating...'
+                                        : 'Create User'
+                                }}
+                            </Button>
+                        </div>
                     </form>
                 </CardContent>
             </Card>
 
-            <div>
-                <h2 class="mb-4 text-xl font-semibold">
-                    All Users
-                </h2>
+            <!-- Users table -->
+            <Card>
+                <CardHeader>
+                    <CardTitle>
+                        All Users
+                    </CardTitle>
+                </CardHeader>
 
-                <div v-if="isLoading">
-                    <p class="text-muted-foreground">
-                        Loading users...
-                    </p>
-                </div>
+                <CardContent class="p-0">
+                    <!-- Loading -->
+                    <div
+                        v-if="isLoading"
+                        class="flex items-center justify-center p-8"
+                    >
+                        <p class="text-muted-foreground">
+                            Loading users...
+                        </p>
+                    </div>
 
-                <Table v-else>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>First Name</TableHead>
-                            <TableHead>Last Name</TableHead>
-                            <TableHead>Email</TableHead>
-                            <TableHead>Role</TableHead>
-                            <TableHead>Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
+                    <!-- Empty -->
+                    <div
+                        v-else-if="users.length === 0"
+                        class="flex items-center justify-center p-8"
+                    >
+                        <p class="text-muted-foreground">
+                            No users found.
+                        </p>
+                    </div>
 
-                    <TableBody>
-                        <TableRow v-for="user in users" :key="user.id">
-                            <TableCell>
-                                <div v-if="editingUserId === user.id">
-                                    <Input v-model="editFirstName" placeholder="First Name" />
+                    <!-- Table -->
+                    <div
+                        v-else
+                        class="overflow-x-auto"
+                    >
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>
+                                        First Name
+                                    </TableHead>
 
-                                    <p v-if="editErrors.first_name" class="text-destructive mt-1 text-sm">
-                                        {{ editErrors.first_name[0] }}
-                                    </p>
-                                </div>
+                                    <TableHead>
+                                        Last Name
+                                    </TableHead>
 
-                                <div v-else>
-                                    {{ user.first_name }}
-                                </div>
-                            </TableCell>
+                                    <TableHead>
+                                        Email
+                                    </TableHead>
 
-                            <TableCell>
-                                <div v-if="editingUserId === user.id">
-                                    <Input v-model="editLastName" placeholder="Last Name" />
+                                    <TableHead>
+                                        Role
+                                    </TableHead>
 
-                                    <p v-if="editErrors.last_name" class="text-destructive mt-1 text-sm">
-                                        {{ editErrors.last_name[0] }}
-                                    </p>
-                                </div>
+                                    <TableHead class="text-right">
+                                        Actions
+                                    </TableHead>
+                                </TableRow>
+                            </TableHeader>
 
-                                <div v-else>
-                                    {{ user.last_name }}
-                                </div>
-                            </TableCell>
+                            <TableBody>
+                                <TableRow
+                                    v-for="user in users"
+                                    :key="user.id"
+                                >
+                                    <!-- First name -->
+                                    <TableCell>
+                                        <div
+                                            v-if="
+                                                editingUserId ===
+                                                user.id
+                                            "
+                                        >
+                                            <Input
+                                                v-model="
+                                                    editFirstName
+                                                "
+                                                placeholder="First Name"
+                                            />
 
-                            <TableCell>
-                                <div v-if="editingUserId === user.id">
-                                    <Input v-model="editEmail" type="email" />
-
-                                    <p v-if="editErrors.email" class="text-destructive mt-1 text-sm">
-                                        {{ editErrors.email[0] }}
-                                    </p>
-                                </div>
-
-                                <div v-else>
-                                    {{ user.email }}
-                                </div>
-                            </TableCell>
-
-                            <TableCell>
-                                <div v-if="editingUserId === user.id">
-                                    <Select v-model="editRole">
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select Role" />
-                                        </SelectTrigger>
-
-                                        <SelectContent>
-                                            <SelectItem value="user">
-                                                User
-                                            </SelectItem>
-
-                                            <SelectItem value="admin">
-                                                Admin
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
-
-                                    <p v-if="editErrors.role" class="text-destructive mt-1 text-sm">
-                                        {{ editErrors.role[0] }}
-                                    </p>
-                                </div>
-
-                                <div v-else>
-                                    <select :value="user.role" :disabled="actionLoading === user.id"
-                                        class="border-input bg-background rounded-md border px-3 py-2 text-sm"
-                                        @change="changeRole(user, $event)">
-                                        <option value="user">
-                                            User
-                                        </option>
-
-                                        <option value="admin">
-                                            Admin
-                                        </option>
-                                    </select>
-                                </div>
-                            </TableCell>
-
-                            <TableCell>
-                                <div v-if="editingUserId === user.id">
-                                    <Button type="button" :disabled="actionLoading === user.id" @click="saveEdit">
-                                        {{
-                                            actionLoading === user.id
-                                                ? 'Saving...'
-                                                : 'Save'
-                                        }}
-                                    </Button>
-
-
-                                    <Button variant="outline" type="button" :disabled="actionLoading === user.id"
-                                        @click="cancelEditing">
-                                        Cancel
-                                    </Button>
-                                </div>
-
-                                <div v-else>
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger as-child>
-                                            <Button variant="outline" type="button"
-                                                :disabled="actionLoading === user.id">
-                                                Actions
-                                            </Button>
-                                        </DropdownMenuTrigger>
-
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuItem @click="startEditingUser(user)">
-                                                Edit
-                                            </DropdownMenuItem>
-
-                                            <DropdownMenuItem class="text-destructive focus:text-destructive"
-                                                @click="deleteUser(user.id)">
+                                            <p
+                                                v-if="
+                                                    editErrors.first_name
+                                                "
+                                                class="text-destructive mt-1 text-sm"
+                                            >
                                                 {{
-                                                    actionLoading === user.id
-                                                        ? 'Deleting...'
-                                                        : 'Delete'
+                                                    editErrors
+                                                        .first_name[0]
                                                 }}
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </div>
+                                            </p>
+                                        </div>
 
+                                        <span v-else>
+                                            {{ user.first_name }}
+                                        </span>
+                                    </TableCell>
 
-                            </TableCell>
+                                    <!-- Last name -->
+                                    <TableCell>
+                                        <div
+                                            v-if="
+                                                editingUserId ===
+                                                user.id
+                                            "
+                                        >
+                                            <Input
+                                                v-model="
+                                                    editLastName
+                                                "
+                                                placeholder="Last Name"
+                                            />
 
-                        </TableRow>
-                    </TableBody>
-                </Table>
-            </div>
+                                            <p
+                                                v-if="
+                                                    editErrors.last_name
+                                                "
+                                                class="text-destructive mt-1 text-sm"
+                                            >
+                                                {{
+                                                    editErrors
+                                                        .last_name[0]
+                                                }}
+                                            </p>
+                                        </div>
+
+                                        <span v-else>
+                                            {{ user.last_name }}
+                                        </span>
+                                    </TableCell>
+
+                                    <!-- Email -->
+                                    <TableCell>
+                                        <div
+                                            v-if="
+                                                editingUserId ===
+                                                user.id
+                                            "
+                                        >
+                                            <Input
+                                                v-model="
+                                                    editEmail
+                                                "
+                                                type="email"
+                                                placeholder="Email"
+                                            />
+
+                                            <p
+                                                v-if="
+                                                    editErrors.email
+                                                "
+                                                class="text-destructive mt-1 text-sm"
+                                            >
+                                                {{
+                                                    editErrors
+                                                        .email[0]
+                                                }}
+                                            </p>
+                                        </div>
+
+                                        <span v-else>
+                                            {{ user.email }}
+                                        </span>
+                                    </TableCell>
+
+                                    <!-- Role -->
+                                    <TableCell>
+                                        <div
+                                            v-if="
+                                                editingUserId ===
+                                                user.id
+                                            "
+                                        >
+                                            <Select
+                                                v-model="editRole"
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue
+                                                        placeholder="Select Role"
+                                                    />
+                                                </SelectTrigger>
+
+                                                <SelectContent>
+                                                    <SelectItem
+                                                        value="user"
+                                                    >
+                                                        User
+                                                    </SelectItem>
+
+                                                    <SelectItem
+                                                        value="admin"
+                                                    >
+                                                        Admin
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
+
+                                            <p
+                                                v-if="
+                                                    editErrors.role
+                                                "
+                                                class="text-destructive mt-1 text-sm"
+                                            >
+                                                {{
+                                                    editErrors
+                                                        .role[0]
+                                                }}
+                                            </p>
+                                        </div>
+
+                                        <div v-else>
+                                            <select
+                                                :value="user.role"
+                                                :disabled="
+                                                    actionLoading ===
+                                                    user.id
+                                                "
+                                                class="border-input bg-background rounded-md border px-3 py-2 text-sm"
+                                                @change="
+                                                    changeRole(
+                                                        user,
+                                                        $event,
+                                                    )
+                                                "
+                                            >
+                                                <option value="user">
+                                                    User
+                                                </option>
+
+                                                <option value="admin">
+                                                    Admin
+                                                </option>
+                                            </select>
+                                        </div>
+                                    </TableCell>
+
+                                    <!-- Actions -->
+                                    <TableCell class="text-right">
+                                        <!-- Inline editing -->
+                                        <div
+                                            v-if="
+                                                editingUserId ===
+                                                user.id
+                                            "
+                                            class="flex justify-end gap-2"
+                                        >
+                                            <Button
+                                                type="button"
+                                                :disabled="
+                                                    actionLoading ===
+                                                    user.id
+                                                "
+                                                @click="saveEdit"
+                                            >
+                                                {{
+                                                    actionLoading ===
+                                                    user.id
+                                                        ? 'Saving...'
+                                                        : 'Save'
+                                                }}
+                                            </Button>
+
+                                            <Button
+                                                variant="outline"
+                                                type="button"
+                                                :disabled="
+                                                    actionLoading ===
+                                                    user.id
+                                                "
+                                                @click="
+                                                    cancelEditing
+                                                "
+                                            >
+                                                Cancel
+                                            </Button>
+                                        </div>
+
+                                        <!-- Actions dropdown -->
+                                        <div v-else>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger
+                                                    as-child
+                                                >
+                                                    <Button
+                                                        variant="outline"
+                                                        type="button"
+                                                        :disabled="
+                                                            actionLoading ===
+                                                            user.id
+                                                        "
+                                                    >
+                                                        Actions
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+
+                                                <DropdownMenuContent
+                                                    align="end"
+                                                >
+                                                    <DropdownMenuItem
+                                                        @click="
+                                                            startEditingUser(
+                                                                user,
+                                                            )
+                                                        "
+                                                    >
+                                                        Edit
+                                                    </DropdownMenuItem>
+
+                                                    <DropdownMenuItem
+                                                        class="text-destructive focus:text-destructive"
+                                                        @click="
+                                                            openDeleteDialog(
+                                                                user,
+                                                            )
+                                                        "
+                                                    >
+                                                        Delete
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            </TableBody>
+                        </Table>
+                    </div>
+                </CardContent>
+            </Card>
         </div>
     </main>
+
+    <!-- Delete confirmation -->
+    <AlertDialog v-model:open="deleteDialogOpen">
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>
+                    Delete user?
+                </AlertDialogTitle>
+
+                <AlertDialogDescription>
+                    This will permanently delete
+                    <strong>
+                        {{
+                            userToDelete
+                                ? `${userToDelete.first_name} ${userToDelete.last_name}`
+                                : 'this user'
+                        }}
+                    </strong>
+                    and cannot be undone.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+
+            <AlertDialogFooter>
+                <AlertDialogCancel>
+                    Cancel
+                </AlertDialogCancel>
+
+                <AlertDialogAction
+                    :disabled="
+                        userToDelete !== null &&
+                        actionLoading === userToDelete.id
+                    "
+                    @click="deleteUser"
+                >
+                    {{
+                        userToDelete !== null &&
+                        actionLoading === userToDelete.id
+                            ? 'Deleting...'
+                            : 'Delete'
+                    }}
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
 </template>

@@ -1,4 +1,3 @@
-```vue
 <script setup lang="ts">
 import axios from 'axios'
 import { onMounted, ref } from 'vue'
@@ -16,15 +15,16 @@ import {
 } from '@/components/ui/select'
 
 import api from '@/lib/api'
+import { toast } from 'vue-sonner'
 
 interface Client {
-    id: number
+    id: string
     first_name: string
     last_name: string
 }
 
 interface Task {
-    id: number
+    id: string
     title: string
     description: string | null
     status: string
@@ -32,7 +32,7 @@ interface Task {
 }
 
 interface Project {
-    id: number
+    id: string
     name: string
     description: string | null
     status: string
@@ -57,6 +57,7 @@ const isLoading = ref(true)
 const isEditing = ref(false)
 const isSaving = ref(false)
 const isLoadingClients = ref(false)
+const isArchiving = ref(false)
 
 const form = ref({
     client_id: '',
@@ -187,7 +188,7 @@ async function saveProject() {
         const response = await api.patch(
             `/projects/${project.value.id}`,
             {
-                client_id: Number(form.value.client_id),
+                client_id: form.value.client_id,
                 name: form.value.name,
                 description: form.value.description,
                 status: form.value.status,
@@ -218,6 +219,8 @@ async function saveProject() {
         }
 
         isEditing.value = false
+
+        toast.success('Project updated successfully.')
     } catch (err: unknown) {
         if (axios.isAxiosError(err)) {
             if (err.response?.status === 422) {
@@ -237,7 +240,37 @@ async function saveProject() {
     }
 }
 
-function openTask(id: number) {
+async function archiveProject() {
+    if (!project.value) {
+        return
+    }
+
+    isArchiving.value = true
+    error.value = ''
+
+    try {
+        await api.patch(
+            `/projects/${project.value.id}/archive`,
+        )
+
+        toast.success('Project archived successfully.')
+
+        await router.push('/projects')
+    } catch (err: unknown) {
+        if (axios.isAxiosError(err)) {
+            error.value =
+                err.response?.data?.message ??
+                'Unable to archive project. Please try again.'
+        } else {
+            error.value =
+                'Unable to archive project. Please try again.'
+        }
+    } finally {
+        isArchiving.value = false
+    }
+}
+
+function openTask(id: string) {
     router.push(`/tasks/${id}`)
 }
 
@@ -285,7 +318,9 @@ onMounted(async () => {
                             <Button
                                 type="button"
                                 :disabled="
-                                    isSaving || isLoadingClients
+                                    isSaving ||
+                                    isArchiving ||
+                                    isLoadingClients
                                 "
                                 @click="saveProject"
                             >
@@ -295,10 +330,29 @@ onMounted(async () => {
                             <Button
                                 variant="outline"
                                 type="button"
-                                :disabled="isSaving"
+                                :disabled="
+                                    isSaving ||
+                                    isArchiving
+                                "
                                 @click="cancelEditing"
                             >
                                 Cancel
+                            </Button>
+
+                            <Button
+                                variant="destructive"
+                                type="button"
+                                :disabled="
+                                    isSaving ||
+                                    isArchiving
+                                "
+                                @click="archiveProject"
+                            >
+                                {{
+                                    isArchiving
+                                        ? 'Archiving...'
+                                        : 'Archive'
+                                }}
                             </Button>
                         </template>
                     </template>
@@ -325,7 +379,10 @@ onMounted(async () => {
             >
                 <div class="space-y-4 rounded-lg border p-6">
                     <div class="flex items-center gap-3">
-                        <h2 class="text-xl font-semibold">
+                        <h2
+                            v-if="!isEditing"
+                            class="text-xl font-semibold"
+                        >
                             {{ project.name }}
                         </h2>
 
@@ -367,7 +424,7 @@ onMounted(async () => {
                             </p>
 
                             <p
-                                v-else
+                                v-if="!isEditing"
                                 class="font-medium"
                             >
                                 {{ project.name }}
@@ -394,9 +451,7 @@ onMounted(async () => {
                                     <SelectItem
                                         v-for="client in clients"
                                         :key="client.id"
-                                        :value="
-                                            client.id.toString()
-                                        "
+                                        :value="client.id.toString()"
                                     >
                                         {{ client.first_name }}
                                         {{ client.last_name }}
@@ -415,7 +470,7 @@ onMounted(async () => {
                             </p>
 
                             <p
-                                v-else
+                                v-if="!isEditing"
                                 class="font-medium"
                             >
                                 {{
@@ -468,7 +523,7 @@ onMounted(async () => {
                             </p>
 
                             <p
-                                v-else
+                                v-if="!isEditing"
                                 class="font-medium"
                             >
                                 {{ project.status }}
@@ -513,7 +568,7 @@ onMounted(async () => {
                             </p>
 
                             <p
-                                v-else
+                                v-if="!isEditing"
                                 class="font-medium"
                             >
                                 {{ project.priority }}
@@ -542,7 +597,7 @@ onMounted(async () => {
                             </p>
 
                             <p
-                                v-else
+                                v-if="!isEditing"
                                 class="font-medium"
                             >
                                 {{ project.budget ?? '-' }}
@@ -571,7 +626,7 @@ onMounted(async () => {
                             </p>
 
                             <p
-                                v-else
+                                v-if="!isEditing"
                                 class="font-medium"
                             >
                                 {{ project.start_date || '-' }}
@@ -600,7 +655,7 @@ onMounted(async () => {
                             </p>
 
                             <p
-                                v-else
+                                v-if="!isEditing"
                                 class="font-medium"
                             >
                                 {{ project.due_date || '-' }}
@@ -629,7 +684,7 @@ onMounted(async () => {
                             </p>
 
                             <p
-                                v-else
+                                v-if="!isEditing"
                                 class="font-medium"
                             >
                                 {{ project.description || '-' }}

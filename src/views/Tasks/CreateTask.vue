@@ -11,12 +11,12 @@ import { Textarea } from '@/components/ui/textarea'
 import api from '@/lib/api'
 
 interface Project {
-    id: number
+    id: string
     name: string
 }
 
 interface User {
-    id: number
+    id: string
     first_name: string
     last_name: string
 }
@@ -27,8 +27,8 @@ const projects = ref<Project[]>([])
 const users = ref<User[]>([])
 
 const form = ref({
-    project_id: null as number | null,
-    user_id: null as number | null,
+    project_id: null as string | null,
+    user_id: null as string | null,
     title: '',
     description: '',
     status: 'Todo',

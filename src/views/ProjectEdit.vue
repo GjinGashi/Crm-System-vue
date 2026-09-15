@@ -1,4 +1,3 @@
-```vue
 <script setup lang="ts">
 import axios from 'axios'
 import { onMounted, ref } from 'vue'
@@ -9,16 +8,17 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 
 import api from '@/lib/api'
+import { toast } from 'vue-sonner'
 
 interface Client {
-    id: number
+    id: string
     first_name: string
     last_name: string
 }
 
 interface Project {
-    id: number
-    client_id: number
+    id: string
+    client_id: string
     name: string
     description: string | null
     status: string
@@ -35,7 +35,7 @@ const clients = ref<Client[]>([])
 const project = ref<Project | null>(null)
 
 const form = ref({
-    client_id: null as number | null,
+    client_id: null as string | null,
     name: '',
     description: '',
     status: 'Planning',
@@ -49,6 +49,7 @@ const errors = ref<Record<string, string[]>>({})
 const error = ref('')
 const isLoading = ref(true)
 const isSaving = ref(false)
+const isArchiving = ref(false)
 
 async function fetchProject() {
     try {
@@ -109,6 +110,8 @@ async function updateProject() {
             form.value,
         )
 
+        toast.success('Project updated successfully.')
+
         await router.push(`/projects/${project.value.id}`)
     } catch (err: unknown) {
         if (axios.isAxiosError(err)) {
@@ -126,6 +129,34 @@ async function updateProject() {
         }
     } finally {
         isSaving.value = false
+    }
+}
+
+async function archiveProject() {
+    if (!project.value) return
+
+    isArchiving.value = true
+    error.value = ''
+
+    try {
+        await api.patch(
+            `/projects/${project.value.id}/archive`,
+        )
+
+        toast.success('Project archived successfully.')
+
+        await router.push('/projects')
+    } catch (err: unknown) {
+        if (axios.isAxiosError(err)) {
+            error.value =
+                err.response?.data?.message ??
+                'Unable to archive project. Please try again.'
+        } else {
+            error.value =
+                'Unable to archive project. Please try again.'
+        }
+    } finally {
+        isArchiving.value = false
     }
 }
 
@@ -418,10 +449,10 @@ onMounted(async () => {
                         {{ error }}
                     </div>
 
-                    <div class="flex gap-3 pt-2">
+                    <div class="flex flex-wrap gap-3 pt-2">
                         <Button
                             type="submit"
-                            :disabled="isSaving"
+                            :disabled="isSaving || isArchiving"
                         >
                             {{
                                 isSaving
@@ -433,10 +464,23 @@ onMounted(async () => {
                         <Button
                             type="button"
                             variant="outline"
-                            :disabled="isSaving"
+                            :disabled="isSaving || isArchiving"
                             @click="cancel"
                         >
                             Cancel
+                        </Button>
+
+                        <Button
+                            type="button"
+                            variant="destructive"
+                            :disabled="isSaving || isArchiving"
+                            @click="archiveProject"
+                        >
+                            {{
+                                isArchiving
+                                    ? 'Archiving...'
+                                    : 'Archive Project'
+                            }}
                         </Button>
                     </div>
                 </form>
