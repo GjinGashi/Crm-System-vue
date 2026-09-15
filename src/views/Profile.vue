@@ -1,4 +1,3 @@
-```vue
 <script setup lang="ts">
 import axios from 'axios'
 import { onMounted, ref } from 'vue'
@@ -177,17 +176,23 @@ onMounted(fetchUser)
                             First Name
                         </p>
 
-                        <Input v-if="editing" v-model="firstName" type="text" />
+                        <Input
+                            v-if="editing"
+                            v-model="firstName"
+                            type="text"
+                        />
 
-                        <p v-if="
-                            editing &&
-                            submitted &&
-                            errors.first_name
-                        " class="text-destructive mt-1 text-sm">
+                        <p
+                            v-if="editing && submitted && errors.first_name"
+                            class="text-destructive mt-1 text-sm"
+                        >
                             {{ errors.first_name[0] }}
                         </p>
 
-                        <p v-else class="font-medium">
+                        <p
+                            v-if="!editing"
+                            class="font-medium"
+                        >
                             {{ user?.first_name }}
                         </p>
                     </div>
@@ -197,17 +202,23 @@ onMounted(fetchUser)
                             Last Name
                         </p>
 
-                        <Input v-if="editing" v-model="lastName" type="text" />
+                        <Input
+                            v-if="editing"
+                            v-model="lastName"
+                            type="text"
+                        />
 
-                        <p v-if="
-                            editing &&
-                            submitted &&
-                            errors.last_name
-                        " class="text-destructive mt-1 text-sm">
+                        <p
+                            v-if="editing && submitted && errors.last_name"
+                            class="text-destructive mt-1 text-sm"
+                        >
                             {{ errors.last_name[0] }}
                         </p>
 
-                        <p v-else class="font-medium">
+                        <p
+                            v-if="!editing"
+                            class="font-medium"
+                        >
                             {{ user?.last_name }}
                         </p>
                     </div>
@@ -218,17 +229,23 @@ onMounted(fetchUser)
                         Email
                     </p>
 
-                    <Input v-if="editing" v-model="email" type="email" />
+                    <Input
+                        v-if="editing"
+                        v-model="email"
+                        type="email"
+                    />
 
-                    <p v-if="
-                        editing &&
-                        submitted &&
-                        errors.email
-                    " class="text-destructive mt-1 text-sm">
+                    <p
+                        v-if="editing && submitted && errors.email"
+                        class="text-destructive mt-1 text-sm"
+                    >
                         {{ errors.email[0] }}
                     </p>
 
-                    <p v-else class="font-medium">
+                    <p
+                        v-if="!editing"
+                        class="font-medium"
+                    >
                         {{ user?.email }}
                     </p>
                 </div>
@@ -245,53 +262,82 @@ onMounted(fetchUser)
 
                 <template v-if="editing">
                     <div>
-                        <Input v-model="currentPassword" type="password" placeholder="Current Password" />
-                        <p v-if="
-                            submitted &&
-                            errors.current_password
-                        " class="text-destructive mt-1 text-sm">
+                        <Input
+                            v-model="currentPassword"
+                            type="password"
+                            placeholder="Current Password"
+                        />
+
+                        <p
+                            v-if="submitted && errors.current_password"
+                            class="text-destructive mt-1 text-sm"
+                        >
                             Old password is incorrect.
                         </p>
                     </div>
 
                     <div>
-                        <Input v-model="password" type="password" placeholder="New Password" />
+                        <Input
+                            v-model="password"
+                            type="password"
+                            placeholder="New Password"
+                        />
 
-                        <p v-if="
-                            submitted &&
-                            errors.password
-                        " class="text-destructive mt-1 text-sm">
+                        <p
+                            v-if="submitted && errors.password"
+                            class="text-destructive mt-1 text-sm"
+                        >
                             {{ errors.password[0] }}
                         </p>
                     </div>
 
                     <div>
-                        <Input v-model="passwordConfirmation" type="password" placeholder="Confirm New Password" />
+                        <Input
+                            v-model="passwordConfirmation"
+                            type="password"
+                            placeholder="Confirm New Password"
+                        />
 
-                        <p v-if="
-                            submitted &&
-                            errors.password_confirmation
-                        " class="text-destructive mt-1 text-sm">
+                        <p
+                            v-if="submitted && errors.password_confirmation"
+                            class="text-destructive mt-1 text-sm"
+                        >
                             {{ errors.password_confirmation[0] }}
                         </p>
                     </div>
 
-                    <p v-if="generalError" class="text-destructive rounded-md bg-red-50 p-3 text-sm">
+                    <p
+                        v-if="generalError"
+                        class="text-destructive rounded-md bg-red-50 p-3 text-sm"
+                    >
                         {{ generalError }}
                     </p>
                 </template>
 
                 <div class="flex gap-2">
-                    <Button v-if="!editing" type="button" @click="startEditing">
+                    <Button
+                        v-if="!editing"
+                        type="button"
+                        @click="startEditing"
+                    >
                         Edit
                     </Button>
 
                     <template v-else>
-                        <Button type="button" :disabled="isSaving" @click="saveProfile">
+                        <Button
+                            type="button"
+                            :disabled="isSaving"
+                            @click="saveProfile"
+                        >
                             {{ isSaving ? 'Saving...' : 'Save' }}
                         </Button>
 
-                        <Button variant="outline" type="button" :disabled="isSaving" @click="cancelEditing">
+                        <Button
+                            variant="outline"
+                            type="button"
+                            :disabled="isSaving"
+                            @click="cancelEditing"
+                        >
                             Cancel
                         </Button>
                     </template>
