@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import ConfirmDialog from '@/components/shared/ConfirmDialog.vue'
 import FormDialog from '@/components/shared/FormDialog.vue'
-import ClientForm from '@/components/clients/ClientForm.vue'
+import ClientForm from '@/components/Clients/ClientForm.vue'
 import {
     Table,
     TableBody,
@@ -280,7 +280,7 @@ watch([viewMode, search, statusFilter], fetchClients)
 
         <ConfirmDialog v-model:open="dialogs.archive" title="Archive client?"
             description="Are you sure you want to archive this client? You can restore the client later."
-            confirm-text="Archive" loading-text="Archiving..." :loading="actionLoading === selectedClientId" destructive
+            confirm-text="Archive" loading-text="Archiving..." :loading="actionLoading === selectedClientId"
             @confirm="confirmAction('archive')" />
 
         <ConfirmDialog v-model:open="dialogs.restore" title="Restore client?"
@@ -293,7 +293,7 @@ watch([viewMode, search, statusFilter], fetchClients)
             confirm-text="Delete" loading-text="Deleting..." :loading="actionLoading === selectedClientId" destructive
             @confirm="confirmAction('delete')" />
 
-        <FormDialog v-model:open="clientDialogOpen" title="Create Client" description="Create a new client.">
+        <FormDialog v-model:open="clientDialogOpen" title="Create Client">
             <ClientForm @saved="onClientCreated" @cancel="clientDialogOpen = false" />
         </FormDialog>
     </div>

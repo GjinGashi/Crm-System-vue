@@ -6,7 +6,7 @@
 
     import ConfirmDialog from '@/components/shared/ConfirmDialog.vue'
     import FormDialog from '@/components/shared/FormDialog.vue'
-    import TaskForm from '@/components/tasks/TaskForm.vue'
+    import TaskForm from '@/components/Tasks/TaskForm.vue'
     import { Badge } from '@/components/ui/badge'
     import { Button } from '@/components/ui/button'
     import {
@@ -394,8 +394,7 @@
         </div>
 
         <ConfirmDialog v-model:open="dialogs.archive" title="Archive task?" :description="dialogText.archive"
-            confirm-text="Archive" loading-text="Archiving..." :loading="actionLoading === selectedTaskId" destructive
-            @confirm="confirmAction('archive')" />
+            confirm-text="Archive" loading-text="Archiving..." :loading="actionLoading === selectedTaskId"  @confirm="confirmAction('archive')" />
 
         <ConfirmDialog v-model:open="dialogs.restore" title="Restore task?" :description="dialogText.restore"
             confirm-text="Restore" loading-text="Restoring..." :loading="actionLoading === selectedTaskId"
@@ -404,7 +403,7 @@
         <ConfirmDialog v-model:open="dialogs.delete" title="Delete task?" :description="dialogText.delete"
             confirm-text="Delete" loading-text="Deleting..." :loading="actionLoading === selectedTaskId" destructive
             @confirm="confirmAction('delete')" />
-        <FormDialog v-model:open="taskDialogOpen" title="Create Task" description="Create a new task.">
+        <FormDialog v-model:open="taskDialogOpen" title="Create Task" >
             <TaskForm @saved="onTaskCreated" @cancel="taskDialogOpen = false" />
         </FormDialog>
     </main>

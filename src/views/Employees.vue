@@ -6,7 +6,7 @@ import { toast } from 'vue-sonner'
 
 import ConfirmDialog from '@/components/shared/ConfirmDialog.vue'
 import FormDialog from '@/components/shared/FormDialog.vue'
-import EmployeeForm from '@/components/employees/EmployeeForm.vue'
+import EmployeeForm from '@/components/Employees/EmployeeForm.vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -275,8 +275,7 @@ onMounted(fetchEmployees)
         </Card>
 
         <ConfirmDialog v-model:open="dialogs.archive" title="Archive employee?" :description="dialogText.archive"
-            confirm-text="Archive" loading-text="Archiving..." :loading="actionLoading" destructive
-            @confirm="confirmAction('archive')" />
+            confirm-text="Archive" loading-text="Archiving..." :loading="actionLoading"  @confirm="confirmAction('archive')" />
 
         <ConfirmDialog v-model:open="dialogs.restore" title="Restore employee?" :description="dialogText.restore"
             confirm-text="Restore" loading-text="Restoring..." :loading="actionLoading"
@@ -286,7 +285,7 @@ onMounted(fetchEmployees)
             confirm-text="Delete" loading-text="Deleting..." :loading="actionLoading" destructive
             @confirm="confirmAction('delete')" />
 
-        <FormDialog v-model:open="employeeDialogOpen" title="Create Employee" description="Create a new employee.">
+        <FormDialog v-model:open="employeeDialogOpen" title="Create Employee">
             <EmployeeForm @saved="employeeDialogOpen = false; fetchEmployees()" @cancel="employeeDialogOpen = false" />
         </FormDialog>
     </div>

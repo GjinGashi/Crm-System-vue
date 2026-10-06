@@ -6,7 +6,7 @@ import { toast } from 'vue-sonner'
 
 import ConfirmDialog from '@/components/shared/ConfirmDialog.vue'
 import FormDialog from '@/components/shared/FormDialog.vue'
-import UserForm from '@/components/users/UserForm.vue'
+import UserForm from '@/components/Users/UserForm.vue'
 import { Button } from '@/components/ui/button'
 import {
     DropdownMenu,
@@ -232,7 +232,7 @@ onMounted(fetchUsers)
             confirm-text="Delete" loading-text="Deleting..." :loading="actionLoading === selectedUserId" destructive
             @confirm="deleteUser" />
 
-        <FormDialog v-model:open="userDialogOpen" title="Create User" description="Create a new user.">
+        <FormDialog v-model:open="userDialogOpen" title="Create User" >
             <UserForm @saved="onUserCreated" @cancel="userDialogOpen = false" />
         </FormDialog>
     </div>

@@ -6,7 +6,7 @@ import { toast } from 'vue-sonner'
 
 import ConfirmDialog from '@/components/shared/ConfirmDialog.vue'
 import FormDialog from '@/components/shared/FormDialog.vue'
-import ProjectForm from '@/components/projects/ProjectForm.vue'
+import ProjectForm from '@/components/Projects/ProjectForm.vue'
 import { Button } from '@/components/ui/button'
 import {
     DropdownMenu,
@@ -303,7 +303,7 @@ watch([viewMode, search, statusFilter], fetchProjects)
         <ConfirmDialog v-model:open="dialogs.archive" title="Archive project?"
             description="Are you sure you want to archive this project? You can restore it later."
             confirm-text="Archive" loading-text="Archiving..." :loading="actionLoading === selectedProjectId"
-            destructive @confirm="confirmAction('archive')" />
+            @confirm="confirmAction('archive')" />
 
         <ConfirmDialog v-model:open="dialogs.restore" title="Restore project?"
             description="Are you sure you want to restore this project?" confirm-text="Restore"
@@ -314,7 +314,7 @@ watch([viewMode, search, statusFilter], fetchProjects)
             description="This action cannot be undone. This will permanently delete the project and its record."
             confirm-text="Delete" loading-text="Deleting..." :loading="actionLoading === selectedProjectId" destructive
             @confirm="confirmAction('delete')" />
-        <FormDialog v-model:open="projectDialogOpen" title="Create Project" description="Create a new project.">
+        <FormDialog v-model:open="projectDialogOpen" title="Create Project" >
             <ProjectForm @saved="onProjectCreated" @cancel="projectDialogOpen = false" />
         </FormDialog>
     </main>

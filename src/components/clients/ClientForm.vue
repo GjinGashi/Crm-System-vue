@@ -22,6 +22,7 @@ interface Client {
     country: string | null
     status: string
     notes: string | null
+    archived_at: string | null
 }
 
 type FieldKey =
@@ -105,7 +106,7 @@ async function submit() {
 
 <template>
     <div :class="isEdit ? '' : 'space-y-6'">
-        <h1 v-if="!isEdit" class="text-3xl font-bold tracking-tight">Add Client</h1>
+    
 
         <form id="client-form" novalidate :class="isEdit ? '' : 'rounded-lg border bg-white p-6'"
             @submit.prevent="submit">
