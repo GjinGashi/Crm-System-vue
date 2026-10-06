@@ -6,7 +6,11 @@ import AppLayout from '@/layouts/AppLayout.vue'
 
 const route = useRoute()
 
-const isAuthPage = computed(() => route.path === '/login')
+const isAuthPage = computed(() =>
+    route.path === '/login' ||
+    route.path === '/forgot-password' ||
+    route.path.startsWith('/reset-password/')
+)
 </script>
 
 <template>
